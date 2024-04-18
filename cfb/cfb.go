@@ -3,6 +3,7 @@ package cfb
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"github.com/shakinm/xlsReader/helpers"
 	"io"
 	"os"
@@ -268,10 +269,14 @@ func (cfb *Cfb) getDataFromFatChain(offset uint32) (data []byte, err error) {
 		}
 
 		data = append(data, sector.Data...)
-		offset = cfb.difatPositions[offset]
-		if offset == helpers.BytesToUint32(ENDOFCHAIN) {
+		newOffset := cfb.difatPositions[offset]
+		if newOffset == helpers.BytesToUint32(ENDOFCHAIN) {
 			break
 		}
+		if newOffset == offset {
+			return nil, errors.New("incorrect xls file format: loop detected in FAT chain")
+		}
+		offset = newOffset
 	}
 
 	return data, err
